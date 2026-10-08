@@ -54,6 +54,7 @@ function buildJoinResponse(room: Room, me: Participant) {
     role: me.role,
     participants: room.listParticipants(),
     state: room.getState(),
+    
   };
 }
 
@@ -319,5 +320,5 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     broadcastState(io, ctx.room);
     reply({ ok: true });
   });
-  
+
 }
