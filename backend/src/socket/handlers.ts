@@ -3,10 +3,22 @@ import { RoomManager } from "../rooms/RoomManager";
 import { Room } from "../rooms/Room";
 import { Participant } from "../types";
 import { normalizeRoomCode } from "../utils/roomCode";
-import { can, isAssignableRole } from "../permissions"; // NEW
+// import { can, isAssignableRole } from "../permissions"; // NEW
+import { can, isAssignableRole, Action } from "../permissions";
+import { parseVideoId } from "../utils/youtube";
 
 const MAX_USERNAME_LENGTH = 20;
 const USERNAME_ERROR = `Username must be 1-${MAX_USERNAME_LENGTH} characters.`;
+const MAX_SEEK_SECONDS = 60 * 60 * 24; // 24h upper bound, rejects absurd values
+
+function parseSeekTime(value: unknown): number | null {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= MAX_SEEK_SECONDS
+    ? value
+    : null;
+}
 const NOT_IN_ROOM = "You are not in a room."; // NEW
 
 // ---------- helpers for untrusted input ----------
@@ -56,6 +68,34 @@ function getContext(
   const room = rooms.getRoom(roomId);
   const me = room?.getParticipant(socket.id);
   return room && me ? { room, me } : null;
+}
+
+// Identify the caller, then check they may perform `action`.
+// Returns the context if allowed; otherwise it replies with an error and returns null.
+function requirePermission(
+  socket: Socket,
+  rooms: RoomManager,
+  action: Action,
+  reply: (response: object) => void
+): { room: Room; me: Participant } | null {
+  const ctx = getContext(socket, rooms);
+  if (!ctx) {
+    reply({ ok: false, error: NOT_IN_ROOM });
+    return null;
+  }
+  if (!can(ctx.me.role, action)) {
+    console.warn(
+      `Rejected "${action}" from ${ctx.me.username} (${ctx.me.role}) in room ${ctx.room.roomId}`
+    );
+    reply({ ok: false, error: `You don't have permission to ${action.replace("_", " ")}.` });
+    return null;
+  }
+  return ctx;
+}
+
+// Everyone in the room (including the sender) gets the new state
+function broadcastState(io: Server, room: Room): void {
+  io.to(room.roomId).emit("sync_state", room.getState());
 }
 
 // NEW: used by leave_room AND by disconnect. Safe to call twice.
@@ -201,6 +241,56 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     if (!can(me.role, "remove_participant")) {
       return reply({ ok: false, error: "Only the host can remove participants." });
     }
+      socket.on("play", (_payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+    const ctx = requirePermission(socket, rooms, "play", reply);
+    if (!ctx) return;
+
+    if (!ctx.room.hasVideo()) return reply({ ok: false, error: "No video loaded yet." });
+
+    ctx.room.play();
+    broadcastState(io, ctx.room);
+    reply({ ok: true });
+  });
+
+  socket.on("pause", (_payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+    const ctx = requirePermission(socket, rooms, "pause", reply);
+    if (!ctx) return;
+
+    if (!ctx.room.hasVideo()) return reply({ ok: false, error: "No video loaded yet." });
+
+    ctx.room.pause();
+    broadcastState(io, ctx.room);
+    reply({ ok: true });
+  });
+
+  socket.on("seek", (payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+    const ctx = requirePermission(socket, rooms, "seek", reply);
+    if (!ctx) return;
+
+    const time = parseSeekTime(asObject(payload).time);
+    if (time === null) return reply({ ok: false, error: "Invalid seek time." });
+    if (!ctx.room.hasVideo()) return reply({ ok: false, error: "No video loaded yet." });
+
+    ctx.room.seek(time);
+    broadcastState(io, ctx.room);
+    reply({ ok: true });
+  });
+
+  socket.on("change_video", (payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+    const ctx = requirePermission(socket, rooms, "change_video", reply);
+    if (!ctx) return;
+
+    const videoId = parseVideoId(asObject(payload).videoId);
+    if (!videoId) return reply({ ok: false, error: "Invalid YouTube video." });
+
+    ctx.room.changeVideo(videoId);
+    broadcastState(io, ctx.room);
+    reply({ ok: true });
+  });
 
     const userId = asObject(payload).userId;
     const target = typeof userId === "string" ? room.getParticipant(userId) : undefined;

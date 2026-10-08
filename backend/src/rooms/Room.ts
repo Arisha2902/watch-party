@@ -51,6 +51,37 @@ export class Room {
       currentTime: this.getLivePosition(),
     };
   }
+    hasVideo(): boolean {
+    return this.videoId !== null;
+  }
+
+  play(): void {
+    this.commitPosition();        // bank the current position FIRST
+    this.playState = "playing";
+  }
+
+  pause(): void {
+    this.commitPosition();        // freeze the position at the moment of pause
+    this.playState = "paused";
+  }
+
+  seek(time: number): void {
+    this.currentTime = time;
+    this.updatedAt = Date.now();  // playState stays as it was
+  }
+
+  changeVideo(videoId: string): void {
+    this.videoId = videoId;
+    this.currentTime = 0;         // new video starts from the beginning...
+    this.updatedAt = Date.now();
+    this.playState = "paused";    // ...and paused; the host presses Play
+  }
+
+  // Saves "where the video is right now" as the new baseline.
+  private commitPosition(): void {
+    this.currentTime = this.getLivePosition();
+    this.updatedAt = Date.now();
+  }
 
   // The video keeps moving while "playing", but we don't tick a counter.
   // We compute the position on demand from the last known position + elapsed time.
