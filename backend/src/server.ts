@@ -2,6 +2,8 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import { config } from "./config";
+import { RoomManager } from "./rooms/RoomManager";
+import { registerHandlers } from "./socket/handlers";
 
 const app = express();
 
@@ -15,13 +17,11 @@ const io = new Server(httpServer, {
   cors: { origin: config.clientOrigin },
 });
 
+const rooms = new RoomManager(); // all active rooms live here, in memory
+
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.id}`);
-
-  // Temporary event, only to test a round trip. We'll delete it later.
-  socket.on("hello", (name: string, ack: (reply: string) => void) => {
-    ack(`Hello ${name}, your socket id is ${socket.id}`);
-  });
+  registerHandlers(io, socket, rooms);
 
   socket.on("disconnect", (reason) => {
     console.log(`Client disconnected: ${socket.id} (${reason})`);
