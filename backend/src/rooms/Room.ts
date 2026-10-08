@@ -1,4 +1,5 @@
-import { Participant, PlayState, RoomState } from "../types";
+import { Participant, PlayState, Role, RoomState } from "../types";
+
 
 export class Room {
   readonly roomId: string;
@@ -26,6 +27,21 @@ export class Room {
 
   listParticipants(): Participant[] {
     return Array.from(this.participants.values());
+  }
+    getParticipant(userId: string): Participant | undefined {
+    return this.participants.get(userId);
+  }
+
+  removeParticipant(userId: string): Participant | undefined {
+    const participant = this.participants.get(userId);
+    this.participants.delete(userId);
+    return participant;
+  }
+
+  setRole(userId: string, role: Role): Participant | undefined {
+    const participant = this.participants.get(userId);
+    if (participant) participant.role = role;
+    return participant;
   }
 
   getState(): RoomState {
