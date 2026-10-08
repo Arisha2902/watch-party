@@ -241,7 +241,35 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     if (!can(me.role, "remove_participant")) {
       return reply({ ok: false, error: "Only the host can remove participants." });
     }
-      socket.on("play", (_payload: unknown, ack: unknown) => {
+   
+
+    const userId = asObject(payload).userId;
+    const target = typeof userId === "string" ? room.getParticipant(userId) : undefined;
+    if (!target) return reply({ ok: false, error: "That user is not in this room." });
+    if (target.userId === me.userId) {
+      return reply({ ok: false, error: "You can't remove yourself." });
+    }
+
+    room.removeParticipant(target.userId);
+
+    // userId === socket.id, so we can find the kicked user's socket directly
+    const targetSocket = io.sockets.sockets.get(target.userId);
+    if (targetSocket) {
+      targetSocket.emit("removed_from_room", { roomId: room.roomId }); // tell THEM first
+      targetSocket.leave(room.roomId);  // stop receiving this room's broadcasts
+      targetSocket.data.roomId = undefined;
+    }
+
+    // Everyone still in the room
+    io.to(room.roomId).emit("participant_removed", {
+      userId: target.userId,
+      username: target.username,
+      participants: room.listParticipants(),
+    });
+    reply({ ok: true });
+  });
+
+   socket.on("play", (_payload: unknown, ack: unknown) => {
     const reply = toReply(ack);
     const ctx = requirePermission(socket, rooms, "play", reply);
     if (!ctx) return;
@@ -291,30 +319,5 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     broadcastState(io, ctx.room);
     reply({ ok: true });
   });
-
-    const userId = asObject(payload).userId;
-    const target = typeof userId === "string" ? room.getParticipant(userId) : undefined;
-    if (!target) return reply({ ok: false, error: "That user is not in this room." });
-    if (target.userId === me.userId) {
-      return reply({ ok: false, error: "You can't remove yourself." });
-    }
-
-    room.removeParticipant(target.userId);
-
-    // userId === socket.id, so we can find the kicked user's socket directly
-    const targetSocket = io.sockets.sockets.get(target.userId);
-    if (targetSocket) {
-      targetSocket.emit("removed_from_room", { roomId: room.roomId }); // tell THEM first
-      targetSocket.leave(room.roomId);  // stop receiving this room's broadcasts
-      targetSocket.data.roomId = undefined;
-    }
-
-    // Everyone still in the room
-    io.to(room.roomId).emit("participant_removed", {
-      userId: target.userId,
-      username: target.username,
-      participants: room.listParticipants(),
-    });
-    reply({ ok: true });
-  });
+  
 }

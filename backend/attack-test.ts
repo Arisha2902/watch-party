@@ -17,7 +17,11 @@ function connect(label: string): Promise<Socket> {
 }
 
 function emitAck(socket: Socket, event: string, payload?: unknown): Promise<any> {
-  return new Promise((resolve) => socket.emit(event, payload, resolve));
+  return new Promise((resolve) =>
+    socket.timeout(3000).emit(event, payload, (err: Error | null, res: any) =>
+      resolve(err ? { TIMED_OUT: "no ack, so the server has no handler for this event" } : res)
+    )
+  );
 }
 
 async function main() {
