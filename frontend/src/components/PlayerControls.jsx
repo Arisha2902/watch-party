@@ -1,13 +1,35 @@
-let apiReady = null;
+import { useState } from "react";
+import { emitAck } from "../services/socket";
 
-export function loadYouTubeApi() {
-  if (apiReady) return apiReady;
-  apiReady = new Promise((resolve) => {
-    if (window.YT?.Player) return resolve();
-    window.onYouTubeIframeAPIReady = () => resolve();
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-  });
-  return apiReady;
+export default function PlayerControls({ playState, hasVideo, canControl }) {
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function handleToggle() {
+    setError("");
+    setBusy(true);
+    try {
+      const event = playState === "playing" ? "pause" : "play";
+      const res = await emitAck(event, {});
+      if (!res.ok) setError(res.error);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!canControl) {
+    return <p className="muted">Only the host and moderators control playback.</p>;
+  }
+
+  return (
+    <div className="controls">
+      <button onClick={handleToggle} disabled={!hasVideo || busy}>
+        {playState === "playing" ? "⏸ Pause" : "▶ Play"}
+      </button>
+      {!hasVideo && <span className="muted">Waiting for a video.</span>}
+      {error && <span className="error">{error}</span>}
+    </div>
+  );
 }

@@ -109,3 +109,8 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+.player-wrap { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; overflow: hidden; }
+.player-container, .player-container iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+.player-shield { position: absolute; inset: 0; z-index: 1; }
+.player-message { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; background: rgba(0, 0, 0, 0.7); }
+.player-container iframe { pointer-events: none; }
