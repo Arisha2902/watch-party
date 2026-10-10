@@ -21,7 +21,7 @@ function applyState(player, loadedVideoId, s) {
   else player.pauseVideo();
 }
 
-export default function YouTubePlayer({ state }) {
+export default function YouTubePlayer({ state, onPlayerReady }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const readyRef = useRef(false);
@@ -45,6 +45,7 @@ export default function YouTubePlayer({ state }) {
         events: {
           onReady: (e) => {
             readyRef.current = true;
+            onPlayerReady?.(e.target);
             applyState(e.target, loadedVideoIdRef, latestStateRef.current);
           },
           onError: () => setPlayerError("This video can't be played (embedding may be disabled)."),
@@ -56,6 +57,7 @@ export default function YouTubePlayer({ state }) {
       cancelled = true;
       readyRef.current = false;
       loadedVideoIdRef.current = null;
+      onPlayerReady?.(null);
       playerRef.current?.destroy();
       playerRef.current = null;
       container.innerHTML = "";

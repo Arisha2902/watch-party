@@ -3,10 +3,16 @@ import { useRoom } from "../hooks/useRoom";
 import ParticipantList from "./ParticipantList";
 import YouTubePlayer from "./YouTubePlayer";
 import PlayerControls from "./PlayerControls";
+import { useRef, useCallback } from "react";
+import SeekControl from "./SeekControl";
 
 export default function RoomView({ initial }) {
   const { participants, videoState, notice, removed, myUserId, myRole } = useRoom(initial);
+  const playerHandle = useRef(null);
+  const getPlayer = useCallback(() => playerHandle.current, []);
+  
 
+  
   if (removed) {
     return (
       <main className="card">
@@ -24,7 +30,7 @@ export default function RoomView({ initial }) {
       <header>
         <h2>Room: {initial.roomId}</h2>
         <button onClick={() => navigator.clipboard.writeText(inviteLink)}>Copy invite link</button>
-        <span>
+        <span>  
           You are: <strong>{myRole}</strong>
         </span>
       </header>
@@ -32,7 +38,9 @@ export default function RoomView({ initial }) {
       {notice && <p className="notice">{notice}</p>}
 
       <section>
-        <YouTubePlayer state={videoState} />
+        {/* <YouTubePlayer state={videoState} /> */}
+        <YouTubePlayer state={videoState} onPlayerReady={(p) => { playerHandle.current = p; }} />
+
         <PlayerControls
           playState={videoState.playState}
           hasVideo={videoState.videoId !== null}

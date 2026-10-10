@@ -114,3 +114,5 @@ code {
 .player-shield { position: absolute; inset: 0; z-index: 1; }
 .player-message { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; background: rgba(0, 0, 0, 0.7); }
 .player-container iframe { pointer-events: none; }
+.seek { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+.seek input { flex: 1; }
