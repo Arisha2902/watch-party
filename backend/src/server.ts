@@ -14,7 +14,7 @@ app.get("/health", (_req, res) => {
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
-  cors: { origin: config.clientOrigin },
+  cors: { origin: config.clientOrigins },
 });
 
 const rooms = new RoomManager(); // all active rooms live here, in memory
@@ -30,5 +30,5 @@ io.on("connection", (socket) => {
 
 httpServer.listen(config.port, () => {
   console.log(`Server running on port ${config.port}`);
-  console.log(`Allowed client origin: ${config.clientOrigin}`);
+  console.log(`Allowed client origins: ${config.clientOrigins.join(",")}`);
 });

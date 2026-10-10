@@ -69,10 +69,14 @@ import YouTubePlayer from "./YouTubePlayer";
 import PlayerControls from "./PlayerControls";
 import SeekControl from "./SeekControl";
 import VideoUrlForm from "./VideoUrlForm";
+import CopyLinkButton from "./CopyLinkButton";
+import { useConnected } from "../hooks/useConnected";
 
 export default function RoomView({ initial }) {
   const { participants, videoState, notice, removed, disconnected, myUserId, myRole } =
-    useRoom(initial);
+    useRoom(initial); 
+  const connected = useConnected();
+  
 
   // hooks must run before any early return
   const playerHandle = useRef(null);
@@ -83,6 +87,22 @@ export default function RoomView({ initial }) {
       <main className="card">
         <h1>You were removed from this room</h1>
         <Link to="/">Back to home</Link>
+      </main>
+    );
+  }
+
+  if (!connected) {
+    return (
+      <main className="card">
+        <h1>Connection lost</h1>
+        <p>You were disconnected from the room. Rejoin to continue.</p>
+        <button
+          onClick={() =>
+            window.location.assign(`/room/${initial.roomId}`)
+          }
+        >
+          Rejoin
+        </button>
       </main>
     );
   }
@@ -105,7 +125,8 @@ export default function RoomView({ initial }) {
     <div className="room">
       <header>
         <h2>Room: {initial.roomId}</h2>
-        <button onClick={() => navigator.clipboard.writeText(inviteLink)}>Copy invite link</button>
+        <CopyLinkButton link={inviteLink} />
+        {/* <button onClick={() => navigator.clipboard.writeText(inviteLink)}>Copy invite link</button> */}
         <span>
           You are: <strong>{myRole}</strong>
         </span>

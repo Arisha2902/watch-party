@@ -168,3 +168,7 @@ button.danger { background: #b91c1c; }
 .video-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .video-form input { flex: 1; min-width: 200px; }
 .video-form .error { width: 100%; margin: 0; }
+.room header { flex-wrap: wrap; }
+.room h2 { letter-spacing: 1px; }
+.card .notice { color: #fbbf24; }
+

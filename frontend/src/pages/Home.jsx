@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { emitAck } from "../services/socket";
+import { useConnected } from "../hooks/useConnected";
+import ServerStatus from "../components/ServerStatus";
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -8,6 +11,7 @@ export default function Home() {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const connected = useConnected();
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -34,19 +38,24 @@ export default function Home() {
   return (
     <main className="card">
       <h1>YouTube Watch Party</h1>
+      <ServerStatus connected={connected} />
 
       <h3>Create a room</h3>
       <form onSubmit={handleCreate}>
         <input value={username} onChange={(e) => setUsername(e.target.value)}
                placeholder="Your name" maxLength={20} />
-        <button disabled={busy}>{busy ? "Creating…" : "Create"}</button>
+        {/* <button disabled={busy}>{busy ? "Creating…" : "Create"}</button> */}
+        <button disabled={busy || !connected}>
+        {busy ? "Creating…" : "Create"}
+        </button>
       </form>
 
       <h3>Join a room</h3>
       <form onSubmit={handleGoToRoom}>
         <input value={code} onChange={(e) => setCode(e.target.value)}
                placeholder="Room code" maxLength={6} />
-        <button>Join</button>
+        {/* <button>Join</button> */}
+        <button disabled={busy || !connected}>Join</button>
       </form>
 
       {error && <p className="error">{error}</p>}
