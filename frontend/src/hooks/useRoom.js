@@ -8,6 +8,12 @@ export function useRoom(initial) {
   const [removed, setRemoved] = useState(false);
 
   useEffect(() => {
+  if (!notice) return;
+  const id = setTimeout(() => setNotice(null), 4000);
+  return () => clearTimeout(id); // a new notice restarts the timer
+}, [notice]);
+
+  useEffect(() => {
     const onJoined = (d) => {
       setParticipants(d.participants);
       setNotice(`${d.username} joined`);

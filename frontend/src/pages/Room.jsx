@@ -2,11 +2,15 @@ import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import RoomView from "../components/RoomView";
 import { emitAck } from "../services/socket";
+import { socket } from "../services/socket";
 
 export default function Room() {
   const { code = "" } = useParams();
   const location = useLocation();
-  const [joined, setJoined] = useState(location.state ?? null);
+  const [joined, setJoined] = useState(
+  location.state?.userId === socket.id ? location.state : null
+);
+  // const [joined, setJoined] = useState(location.state ?? null);
 
   if (!joined) return <JoinForm code={code} onJoined={setJoined} />;
   return <RoomView initial={joined} />;
