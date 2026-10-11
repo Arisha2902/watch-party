@@ -11,6 +11,10 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.get("/", (_req, res) => {
+  res.send("Watch Party API is running!");
+});
+
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
