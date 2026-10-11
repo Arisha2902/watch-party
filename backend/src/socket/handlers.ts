@@ -1,25 +1,31 @@
+import { randomUUID } from "crypto";
 import { Server, Socket } from "socket.io";
 import { RoomManager } from "../rooms/RoomManager";
 import { Room } from "../rooms/Room";
 import { Participant } from "../types";
 import { normalizeRoomCode } from "../utils/roomCode";
-// import { can, isAssignableRole } from "../permissions"; // NEW
-import { can, isAssignableRole, Action } from "../permissions";
 import { parseVideoId } from "../utils/youtube";
+import { can, isAssignableRole, Action } from "../permissions";
 
 const MAX_USERNAME_LENGTH = 20;
 const USERNAME_ERROR = `Username must be 1-${MAX_USERNAME_LENGTH} characters.`;
+const NOT_IN_ROOM = "You are not in a room.";
 const MAX_SEEK_SECONDS = 60 * 60 * 24; // 24h upper bound, rejects absurd values
 
-function parseSeekTime(value: unknown): number | null {
-  return typeof value === "number" &&
-    Number.isFinite(value) &&
-    value >= 0 &&
-    value <= MAX_SEEK_SECONDS
-    ? value
-    : null;
-}
-const NOT_IN_ROOM = "You are not in a room."; // NEW
+const MAX_CHAT_LENGTH = 300;
+const CHAT_MIN_GAP_MS = 500;      // at most 2 chat messages per second per user
+const REACTION_MIN_GAP_MS = 200;  // at most 5 reactions per second per user
+
+// Whitelist. The client sends a KEY; the server decides which emoji that means.
+// A Map (not a plain object) so keys like "constructor" can never match by accident.
+const REACTIONS = new Map<string, string>([
+  ["like", "👍"],
+  ["love", "❤️"],
+  ["laugh", "😂"],
+  ["fire", "🔥"],
+  ["clap", "👏"],
+  ["party", "🎉"],
+]);
 
 // ---------- helpers for untrusted input ----------
 
@@ -35,15 +41,40 @@ function parseUsername(value: unknown): string | null {
   return name.length >= 1 && name.length <= MAX_USERNAME_LENGTH ? name : null;
 }
 
+function parseSeekTime(value: unknown): number | null {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= MAX_SEEK_SECONDS
+    ? value
+    : null;
+}
+
+function parseChatText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text.length >= 1 && text.length <= MAX_CHAT_LENGTH ? text : null;
+}
+
+// A client may send no ack callback at all. Calling undefined() would crash the server.
 function toReply(ack: unknown): (response: object) => void {
   return typeof ack === "function" ? (ack as (r: object) => void) : () => {};
+}
+
+// Very small anti-spam: remembers when THIS socket last did `key` and refuses if it was too recent.
+function tooFast(socket: Socket, key: string, minGapMs: number): boolean {
+  const now = Date.now();
+  const last = (socket.data[key] as number | undefined) ?? 0;
+  if (now - last < minGapMs) return true;
+  socket.data[key] = now;
+  return false;
 }
 
 // ---------- shared helpers ----------
 
 function enterRoom(socket: Socket, roomId: string): void {
-  socket.join(roomId);
-  socket.data.roomId = roomId;
+  socket.join(roomId);          // Socket.IO room: lets us broadcast with io.to(roomId)
+  socket.data.roomId = roomId;  // our own record of "which room is this socket in"
 }
 
 function buildJoinResponse(room: Room, me: Participant) {
@@ -53,12 +84,11 @@ function buildJoinResponse(room: Room, me: Participant) {
     userId: me.userId,
     role: me.role,
     participants: room.listParticipants(),
-    state: room.getState(),
-    
+    state: room.getState(), // initial sync for the new user
   };
 }
 
-// NEW: "Who is this socket and which room is it in?" Answered ONLY from
+// "Who is this socket and which room is it in?" Answered ONLY from
 // server-side records (socket.id + socket.data.roomId), never from the payload.
 function getContext(
   socket: Socket,
@@ -88,7 +118,7 @@ function requirePermission(
     console.warn(
       `Rejected "${action}" from ${ctx.me.username} (${ctx.me.role}) in room ${ctx.room.roomId}`
     );
-    reply({ ok: false, error: `You don't have permission to ${action.replace("_", " ")}.` });
+    reply({ ok: false, error: `You don't have permission to ${action.replace(/_/g, " ")}.` });
     return null;
   }
   return ctx;
@@ -99,7 +129,7 @@ function broadcastState(io: Server, room: Room): void {
   io.to(room.roomId).emit("sync_state", room.getState());
 }
 
-// NEW: used by leave_room AND by disconnect. Safe to call twice.
+// Used by leave_room AND by disconnect. Safe to call twice.
 function leaveRoom(io: Server, socket: Socket, rooms: RoomManager): void {
   const roomId = socket.data.roomId as string | undefined;
   if (!roomId) return; // not in a room (or already left): nothing to do
@@ -111,11 +141,31 @@ function leaveRoom(io: Server, socket: Socket, rooms: RoomManager): void {
   const left = room?.removeParticipant(socket.id);
   if (!room || !left) return;
 
+  // Nobody left: delete the room
+  if (room.isEmpty()) {
+    rooms.deleteRoom(roomId);
+    console.log(`Room ${roomId} deleted (empty)`);
+    return;
+  }
+
   io.to(roomId).emit("user_left", {
     username: left.username,
     userId: left.userId,
     participants: room.listParticipants(),
   });
+
+  // The Host left: pick a successor and announce it (reuses role_assigned)
+  if (left.role === "host") {
+    const newHost = room.promoteSuccessor();
+    if (newHost) {
+      io.to(roomId).emit("role_assigned", {
+        userId: newHost.userId,
+        username: newHost.username,
+        role: "host",
+        participants: room.listParticipants(),
+      });
+    }
+  }
 }
 
 // ---------- event handlers ----------
@@ -134,7 +184,7 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     const me: Participant = {
       userId: socket.id,
       username,
-      role: "host",
+      role: "host", // decided by the server, never by the client
       joinedAt: Date.now(),
     };
     room.addParticipant(me);
@@ -167,7 +217,7 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     const me: Participant = {
       userId: socket.id,
       username,
-      role: "participant",
+      role: "participant", // always Participant on join
       joinedAt: Date.now(),
     };
     room.addParticipant(me);
@@ -175,6 +225,7 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
 
     reply(buildJoinResponse(room, me));
 
+    // Tell everyone ELSE in the room (socket.to excludes the sender)
     socket.to(room.roomId).emit("user_joined", {
       username: me.username,
       userId: me.userId,
@@ -183,18 +234,15 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     });
   });
 
-  // NEW
   socket.on("leave_room", (_payload: unknown, ack: unknown) => {
     leaveRoom(io, socket, rooms);
     toReply(ack)({ ok: true });
   });
 
-  // NEW
   socket.on("disconnect", () => {
     leaveRoom(io, socket, rooms);
   });
 
-  // NEW
   socket.on("assign_role", (payload: unknown, ack: unknown) => {
     const reply = toReply(ack);
 
@@ -231,7 +279,6 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     reply({ ok: true });
   });
 
-  // NEW
   socket.on("remove_participant", (payload: unknown, ack: unknown) => {
     const reply = toReply(ack);
 
@@ -242,7 +289,6 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     if (!can(me.role, "remove_participant")) {
       return reply({ ok: false, error: "Only the host can remove participants." });
     }
-   
 
     const userId = asObject(payload).userId;
     const target = typeof userId === "string" ? room.getParticipant(userId) : undefined;
@@ -270,7 +316,9 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     reply({ ok: true });
   });
 
-   socket.on("play", (_payload: unknown, ack: unknown) => {
+  // ----- playback (Host + Moderator) -----
+
+  socket.on("play", (_payload: unknown, ack: unknown) => {
     const reply = toReply(ack);
     const ctx = requirePermission(socket, rooms, "play", reply);
     if (!ctx) return;
@@ -321,4 +369,55 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     reply({ ok: true });
   });
 
+  // ----- chat and reactions (every member of the room) -----
+
+  socket.on("chat_message", (payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+
+    const ctx = getContext(socket, rooms);
+    if (!ctx) return reply({ ok: false, error: NOT_IN_ROOM });
+
+    const text = parseChatText(asObject(payload).text);
+    if (!text) {
+      return reply({ ok: false, error: `Message must be 1-${MAX_CHAT_LENGTH} characters.` });
+    }
+    if (tooFast(socket, "lastChatAt", CHAT_MIN_GAP_MS)) {
+      return reply({ ok: false, error: "You're sending messages too fast." });
+    }
+
+    // Name and role come from the server's records, never from the payload
+    io.to(ctx.room.roomId).emit("chat_message", {
+      id: randomUUID(),
+      userId: ctx.me.userId,
+      username: ctx.me.username,
+      role: ctx.me.role,
+      text,
+      sentAt: Date.now(),
+    });
+    reply({ ok: true });
+  });
+
+  socket.on("reaction", (payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+
+    const ctx = getContext(socket, rooms);
+    if (!ctx) return reply({ ok: false, error: NOT_IN_ROOM });
+
+    const type = asObject(payload).type;
+    const emoji = typeof type === "string" ? REACTIONS.get(type) : undefined;
+    if (!emoji) return reply({ ok: false, error: "Unknown reaction." });
+
+    if (tooFast(socket, "lastReactionAt", REACTION_MIN_GAP_MS)) {
+      return reply({ ok: false, error: "Slow down a little." });
+    }
+
+    io.to(ctx.room.roomId).emit("reaction", {
+      id: randomUUID(),
+      userId: ctx.me.userId,
+      username: ctx.me.username,
+      type,
+      emoji,
+    });
+    reply({ ok: true });
+  });
 }

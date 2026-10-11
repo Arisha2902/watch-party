@@ -1,6 +1,3 @@
-// 
-
-
 import { useState } from "react";
 import { emitAck } from "../services/socket";
 
@@ -38,6 +35,7 @@ export default function ParticipantList({ participants, myUserId, myRole }) {
       <ul className="participants">
         {participants.map((p) => {
           const showControls = iAmHost && p.userId !== myUserId; // never on yourself
+          const busy = busyUserId === p.userId;
           return (
             <li key={p.userId}>
               <div className="person">
@@ -50,15 +48,15 @@ export default function ParticipantList({ participants, myUserId, myRole }) {
               {showControls && (
                 <div className="actions">
                   {p.role === "participant" ? (
-                    <button disabled={busyUserId === p.userId} onClick={() => handleRole(p, "moderator")}>
+                    <button disabled={busy} onClick={() => handleRole(p, "moderator")}>
                       Make Moderator
                     </button>
                   ) : (
-                    <button disabled={busyUserId === p.userId} onClick={() => handleRole(p, "participant")}>
+                    <button disabled={busy} onClick={() => handleRole(p, "participant")}>
                       Make Participant
                     </button>
                   )}
-                  <button className="danger" disabled={busyUserId === p.userId} onClick={() => handleRemove(p)}>
+                  <button className="danger" disabled={busy} onClick={() => handleRemove(p)}>
                     Remove
                   </button>
                 </div>

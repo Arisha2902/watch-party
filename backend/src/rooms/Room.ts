@@ -1,6 +1,5 @@
 import { Participant, PlayState, Role, RoomState } from "../types";
 
-
 export class Room {
   readonly roomId: string;
   private videoId: string | null = null;
@@ -12,6 +11,8 @@ export class Room {
   constructor(roomId: string) {
     this.roomId = roomId;
   }
+
+  // ---------- participants ----------
 
   addParticipant(participant: Participant): void {
     this.participants.set(participant.userId, participant);
@@ -28,7 +29,8 @@ export class Room {
   listParticipants(): Participant[] {
     return Array.from(this.participants.values());
   }
-    getParticipant(userId: string): Participant | undefined {
+
+  getParticipant(userId: string): Participant | undefined {
     return this.participants.get(userId);
   }
 
@@ -44,6 +46,22 @@ export class Room {
     return participant;
   }
 
+  isEmpty(): boolean {
+    return this.participants.size === 0;
+  }
+
+  // Called when the Host left. Oldest Moderator first, otherwise the oldest Participant.
+  promoteSuccessor(): Participant | undefined {
+    const candidates = this.listParticipants().sort((a, b) => a.joinedAt - b.joinedAt);
+    const successor =
+      candidates.find((p) => p.role === "moderator") ??
+      candidates.find((p) => p.role === "participant");
+    if (successor) successor.role = "host";
+    return successor;
+  }
+
+  // ---------- video state ----------
+
   getState(): RoomState {
     return {
       videoId: this.videoId,
@@ -51,7 +69,8 @@ export class Room {
       currentTime: this.getLivePosition(),
     };
   }
-    hasVideo(): boolean {
+
+  hasVideo(): boolean {
     return this.videoId !== null;
   }
 

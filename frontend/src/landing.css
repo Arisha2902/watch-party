@@ -1,0 +1,168 @@
+/* Landing page styles (imported by pages/Home.jsx). Uses the colour tokens from index.css. */
+
+html { scroll-behavior: smooth; }
+
+.lp { max-width: 1150px; margin: 0 auto; padding: 0 20px 40px; }
+.lp section[id] { scroll-margin-top: 90px; }
+
+/* ===== Reveal on scroll =====
+   Elements start hidden; JS adds .in when they scroll into view, which runs the fade-up
+   animation (defined in index.css). "backwards" releases the element afterwards, so hover works. */
+.reveal:not(.in) { opacity: 0; }
+.reveal.in { animation: fade-up 0.7s ease-out backwards; animation-delay: calc(var(--i, 0) * 90ms); }
+
+/* ===== Navigation ===== */
+.lp-nav {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 0; margin-bottom: 8px;
+  background: rgba(27, 37, 30, 0.55); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.lp-brand { font-family: var(--serif); font-size: 26px; letter-spacing: 0.08em; color: var(--text); }
+.lp-brand span { color: var(--amber); }
+.lp-links { display: flex; gap: 28px; }
+.lp-links a { font-size: 14px; letter-spacing: 0.06em; }
+
+/* ===== Buttons that are links ===== */
+.lp-cta {
+  display: inline-block; padding: 12px 26px; border-radius: 999px;
+  background: var(--amber); color: #fff7ef; border: 1px solid var(--amber);
+  font-size: 15px; letter-spacing: 0.04em;
+  transition: transform 0.2s, box-shadow 0.25s, background 0.2s;
+}
+.lp-cta:hover { background: var(--amber-hover); color: #fff7ef; transform: translateY(-2px); box-shadow: 0 8px 22px rgba(204, 85, 0, 0.38); }
+.lp-cta-sm { padding: 8px 18px; font-size: 14px; }
+.lp-ghost {
+  display: inline-block; padding: 12px 26px; border-radius: 999px;
+  border: 1px solid var(--line-strong); color: var(--text); font-size: 15px;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s;
+}
+.lp-ghost:hover { background: rgba(156, 175, 136, 0.15); border-color: var(--sage); transform: translateY(-2px); }
+
+/* ===== Hero ===== */
+.lp-hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: center; padding: 40px 0 70px; }
+.lp-hero-text { animation: fade-up 0.7s ease-out backwards; }
+.lp-hero-text h1 { font-size: clamp(40px, 6vw, 72px); line-height: 1.02; margin: 12px 0 18px; }
+.lp-hero-text h1 em {
+  font-style: italic;
+  background: linear-gradient(100deg, var(--amber), var(--gold));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lp-lead { max-width: 520px; font-size: 18px; line-height: 1.6; color: var(--muted); margin: 0 0 24px; }
+.lp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
+.lp-hero .card { margin: 0; max-width: none; }
+.lp-hero .card h2 { margin: 0; font-size: 32px; }
+
+.lp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lp-chips-center { justify-content: center; margin-top: 22px; }
+.lp-chips span {
+  padding: 6px 14px; border-radius: 99px; font-size: 13px; color: var(--muted);
+  border: 1px solid var(--line); background: rgba(0, 0, 0, 0.18);
+  transition: color 0.2s, border-color 0.2s, transform 0.2s;
+}
+.lp-chips span:hover { color: var(--text); border-color: var(--sage); transform: translateY(-2px); }
+
+/* ===== Sections ===== */
+.lp-section { padding: 60px 0; }
+.lp-head { text-align: center; max-width: 640px; margin: 0 auto 36px; }
+.lp-head h2 { font-size: clamp(30px, 4vw, 46px); margin: 8px 0 10px; }
+.lp-head p { color: var(--muted); line-height: 1.6; margin: 0; }
+.lp-head .eyebrow { color: var(--sage); margin-bottom: 4px; }
+
+.lp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.lp-card {
+  padding: 26px; border-radius: 16px;
+  background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px);
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.lp-card:hover {
+  transform: translateY(-6px); border-color: var(--line-strong);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.4), 0 0 34px rgba(156, 175, 136, 0.1);
+}
+.lp-card h3 { margin: 4px 0 8px; font-size: 24px; }
+.lp-card p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 15px; }
+
+.lp-step-n { font-family: var(--serif); font-size: 56px; line-height: 1; color: var(--amber); transition: color 0.3s, transform 0.3s; }
+.lp-card:hover .lp-step-n { color: var(--gold); transform: translateX(4px); }
+
+.lp-icon {
+  width: 46px; height: 46px; border-radius: 12px; margin-bottom: 14px;
+  display: grid; place-items: center; font-size: 22px;
+  background: rgba(204, 85, 0, 0.15); border: 1px solid rgba(204, 85, 0, 0.35);
+  transition: transform 0.3s;
+}
+.lp-card:hover .lp-icon { transform: scale(1.12) rotate(-6deg); }
+
+/* ===== Roles ===== */
+.lp-who { margin: 10px 0 0 !important; font-size: 14px !important; }
+.lp-list { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; font-size: 14px; }
+.lp-list li::before { content: "✓"; color: var(--sage); margin-right: 10px; }
+.lp-list.no li { color: var(--muted); }
+.lp-list.no li::before { content: "✕"; color: var(--muted); }
+
+/* ===== "Inside a room" illustration ===== */
+.lp-mock {
+  display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; padding: 20px;
+  border-radius: 20px; border: 1px solid var(--line); background: var(--panel);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);
+}
+.lp-mock h3 { margin: 0 0 8px; font-size: 22px; }
+.lp-mock-player {
+  position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #0b0f0c, #1d2a20);
+}
+.lp-mock-play {
+  width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--amber); color: #fff7ef; font-size: 26px;
+  animation: lp-ping 2.2s ease-out infinite;
+}
+@keyframes lp-ping { 0% { box-shadow: 0 0 0 0 rgba(204, 85, 0, 0.55); } 70%, 100% { box-shadow: 0 0 0 24px rgba(204, 85, 0, 0); } }
+.lp-mock-bar { position: absolute; left: 16px; right: 16px; bottom: 14px; height: 4px; border-radius: 9px; background: rgba(156, 175, 136, 0.3); }
+.lp-mock-bar i { display: block; height: 100%; border-radius: 9px; background: var(--amber); animation: lp-progress 9s linear infinite; }
+@keyframes lp-progress { from { width: 0; } to { width: 100%; } }
+
+/* ===== Under the hood ===== */
+.lp-flow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+.lp-flow-item { display: inline-flex; align-items: center; gap: 10px; }
+.lp-flow-item b {
+  font-weight: 500; font-size: 14px; padding: 12px 18px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--panel);
+  transition: border-color 0.3s, transform 0.3s;
+}
+.lp-flow-item b:hover { border-color: var(--amber); transform: translateY(-3px); }
+.lp-arrow { font-style: normal; font-size: 22px; color: var(--amber); }
+
+/* ===== FAQ ===== */
+.lp-faq { max-width: 760px; margin: 0 auto; display: grid; gap: 10px; }
+.lp-faq details {
+  padding: 0 18px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--panel);
+  transition: border-color 0.3s;
+}
+.lp-faq details:hover, .lp-faq details[open] { border-color: var(--line-strong); }
+.lp-faq summary {
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none;
+  padding: 16px 0; font-family: var(--serif); font-size: 21px;
+}
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq summary::after { content: "+"; font-size: 26px; color: var(--amber); transition: transform 0.3s; }
+.lp-faq details[open] summary::after { transform: rotate(45deg); }
+.lp-faq p { margin: 0 0 16px; color: var(--muted); line-height: 1.6; }
+
+/* ===== Final call to action + footer ===== */
+.lp-final {
+  text-align: center; padding: 56px 20px; margin: 30px 0; border-radius: 24px;
+  border: 1px solid var(--line);
+  background: radial-gradient(ellipse at 50% 0%, rgba(204, 85, 0, 0.22), rgba(30, 42, 33, 0.7) 70%);
+}
+.lp-final h2 { margin: 0 0 20px; font-size: clamp(30px, 4vw, 44px); }
+.lp-footer { text-align: center; color: var(--muted); font-size: 14px; padding: 26px 0 8px; border-top: 1px solid var(--line); }
+
+/* ===== Small screens ===== */
+@media (max-width: 900px) {
+  .lp-hero { grid-template-columns: 1fr; gap: 32px; }
+  .lp-mock { grid-template-columns: 1fr; }
+  .lp-links { display: none; }
+}
