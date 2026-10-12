@@ -1,6 +1,7 @@
 const ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const YOUTUBE_HOSTS = ["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com"];
 
+
 // Accepts a YouTube URL (or a bare 11-char ID). Returns the video ID or null.
 export function extractVideoId(input) {
   const text = input.trim();

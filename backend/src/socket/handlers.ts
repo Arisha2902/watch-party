@@ -174,9 +174,40 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
   socket.on("create_room", (payload: unknown, ack: unknown) => {
     const reply = toReply(ack);
 
+    // if (socket.data.roomId) {
+    //   return reply({ ok: false, error: "You are already in a room." });
+    // }
+    socket.on("create_room", (payload: unknown, ack: unknown) => {
+    const reply = toReply(ack);
+
     if (socket.data.roomId) {
       return reply({ ok: false, error: "You are already in a room." });
     }
+    const body = asObject(payload);
+
+    const username = parseUsername(body.username);
+    if (!username) return reply({ ok: false, error: USERNAME_ERROR });
+
+    // Check the video BEFORE creating the room, so a bad request leaves nothing behind
+    const videoId = parseVideoId(body.videoId);
+    if (!videoId) {
+      return reply({ ok: false, error: "A valid YouTube link is required to create a room." });
+    }
+
+    const room = rooms.createRoom();
+    room.changeVideo(videoId);
+    const me: Participant = {
+      userId: socket.id,
+      username,
+      role: "host", // decided by the server, never by the client
+      joinedAt: Date.now(),
+    };
+    room.addParticipant(me);
+    enterRoom(socket, room.roomId);
+
+    reply(buildJoinResponse(room, me));
+  });
+
     const username = parseUsername(asObject(payload).username);
     if (!username) return reply({ ok: false, error: USERNAME_ERROR });
 
