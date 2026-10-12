@@ -274,8 +274,10 @@ export default function Home() {
     const name = username.trim();
     if (!name) return setError("Enter your name first.");
 
+    // A new room needs a video, so the Host can never enter an empty room
     let videoId = null;
-    if (tab === "create" && videoUrl.trim()) {
+    if (tab === "create") {
+      if (!videoUrl.trim()) return setError("Paste a YouTube link to create a room.");
       videoId = extractVideoId(videoUrl);
       if (!videoId) return setError("That doesn't look like a valid YouTube link.");
     }
@@ -290,15 +292,20 @@ export default function Home() {
     try {
       const res =
         tab === "create"
-          ? await emitAck("create_room", { username: name })
+          ? await emitAck("create_room", { username: name, videoId })
           : await emitAck("join_room", { roomId: roomCode, username: name });
 
       if (!res.ok) return setError(res.error);
 
-      // Optional first video: the new Host loads it before entering the room
-      if (videoId) {
+      // Fallback for a server that ignores videoId in create_room: load it now.
+      // If that also fails, the room can't start, so leave it and show the error.
+      if (tab === "create" && res.state.videoId !== videoId) {
         const v = await emitAck("change_video", { videoId });
-        if (v.ok) res.state = { ...res.state, videoId, playState: "paused", currentTime: 0 };
+        if (!v.ok) {
+          emitAck("leave_room", { roomId: res.roomId }).catch(() => {});
+          return setError(v.error || "Could not load that video. Try another link.");
+        }
+        res.state = { ...res.state, videoId, playState: "paused", currentTime: 0 };
       }
 
       navigate(`/room/${res.roomId}`, { state: res });
@@ -394,8 +401,8 @@ export default function Home() {
 
             {tab === "create" ? (
               <div className="field">
-                <label htmlFor="lp-video">Video source (optional)</label>
-                <input id="lp-video" value={videoUrl}
+                <label htmlFor="lp-video">YouTube link (required)</label>
+                <input id="lp-video" value={videoUrl} required
                        onChange={(e) => setVideoUrl(e.target.value)}
                        placeholder="Paste a YouTube link" />
               </div>
@@ -408,7 +415,8 @@ export default function Home() {
               </div>
             )}
 
-            <button className="btn btn-primary btn-block" disabled={busy || !connected}>
+            <button className="btn btn-primary btn-block"
+                    disabled={busy || !connected || (tab === "create" && !videoUrl.trim())}>
               {busy ? "Please wait…" : tab === "create" ? "Create Room" : "Join Room"}
             </button>
             {error && <p className="form-error">{error}</p>}
