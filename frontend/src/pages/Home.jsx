@@ -273,7 +273,7 @@ export default function Home() {
 
   // Page title (index.html has the default; this keeps it right after navigating back)
   useEffect(() => {
-    document.title = "WatchParty | Watch YouTube together, in sync";
+    document.title = "Cueroom | Watch YouTube together, in sync";
   }, []);
 
   // Escape closes the mobile menu
@@ -363,7 +363,7 @@ export default function Home() {
           <a className="lp-brand" href="/" aria-label="WatchParty home"
              onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); setMenuOpen(false); }}>
             <span className="lp-logo"><Icon name="play" size={13} /></span>
-            WatchParty
+            Cueroom
           </a>
           <div id="lp-menu" className={`lp-links ${menuOpen ? "open" : ""}`}>
             {NAV_LINKS.map(([href, label]) => (
@@ -604,7 +604,7 @@ export default function Home() {
         <div className="wrap">
           <div className="foot-top">
             <div>
-              <strong>WatchParty</strong>
+              <strong>Cueroom</strong>
               <p>Watch YouTube together, in sync, with friends anywhere.</p>
             </div>
             <nav className="foot-links" aria-label="Footer">

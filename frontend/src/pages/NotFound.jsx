@@ -17,7 +17,7 @@ export default function NotFound() {
               <path d="M7 4l13 8-13 8z" />
             </svg>
           </span>
-          WatchParty
+          Cueroom
         </Link>
         <p className="kicker mono">Error 404</p>
         <h1>This page doesn't exist</h1>
