@@ -1,0 +1,42 @@
+/* ===== Mobile rules for the room page and the simple card pages (join form, etc.) =====
+   Append this to the END of src/room.css (or src/index.css). Safe to paste as one block. */
+
+/* Never let content push the page sideways */
+html, body { max-width: 100%; }
+img, svg, video, iframe { max-width: 100%; }
+
+/* Grid children may shrink instead of forcing the grid wider than the screen */
+.room > * { min-width: 0; }
+.room pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 800px) {
+  .room { grid-template-columns: minmax(0, 1fr); padding: 12px; gap: 12px; }
+  .room header { flex-wrap: wrap; gap: 8px 12px; }
+  .room header h2 { font-size: 18px; margin: 0; }
+
+  /* controls wrap onto new lines instead of overflowing */
+  .controls, .reaction-bar, .seek, .video-form { flex-wrap: wrap; }
+  .seek input[type="range"] { flex: 1 1 140px; min-width: 0; }
+  .video-form { display: flex; gap: 8px; }
+  .video-form input { flex: 1 1 180px; min-width: 0; }
+
+  /* participant rows: buttons drop under the name */
+  .participants li { flex-wrap: wrap; gap: 8px; }
+  .participants .actions { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+
+  /* bigger tap targets + no iOS zoom on focus */
+  .room button, .card button { min-height: 40px; }
+  .room input, .card input { font-size: 16px; }
+
+  .chat-list { max-height: 260px; }
+}
+
+@media (max-width: 480px) {
+  .card { margin: 20px 12px; padding: 18px; max-width: none; }
+  .card form { flex-direction: column; }
+  .card form button { width: 100%; }
+  .reaction-btn { flex: 1 1 40px; }
+  .notice { font-size: 14px; }
+}
+
+.success { color: #34d399; margin: 6px 0 0; font-size: 14px; }

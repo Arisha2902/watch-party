@@ -68,6 +68,7 @@ const PATHS = {
       <path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10" />
     </>
   ),
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
 };
 
 function Icon({ name, size = 16 }) {
@@ -152,6 +153,26 @@ const FLOW = [
   { icon: "users", name: "Room viewers", sub: "Apply the new state", edge: null, tone: "green" },
 ];
 
+// One list feeds the top menu, the mobile menu and the footer, so links can't drift apart.
+// Every href must match an id on the page (checked by the build script I ran).
+// Top menu: only what a visitor needs. The developer-facing sections stay in the footer.
+const NAV_LINKS = [
+  ["#how", "How it works"],
+  ["#features", "Features"],
+  ["#roles", "Roles"],
+  ["#faq", "FAQ"],
+];
+const FOOTER_LINKS = [
+  ...NAV_LINKS,
+  ["#inside", "Inside a Room"],
+  ["#tech", "Tech Stack"],
+];
+
+// Fill these in to show them in the footer. Empty = nothing is shown (no placeholder text).
+const GITHUB_URL = "";
+const CONTACT_EMAIL = "";   // e.g. "you@gmail.com"  -> becomes a mailto: link
+const CONTACT_PHONE = "";   // e.g. "+91 98765 43210" -> becomes a tel: link
+
 const TECH = ["React", "Vite", "Node.js", "Express", "Socket.IO", "WebSockets", "YouTube IFrame API", "TypeScript (backend)"];
 
 const FAQ = [
@@ -179,8 +200,7 @@ function RoomPreview() {
     <div className="preview panel">
       <div className="preview-top">
         <span className="dot" />
-        <strong>Demo room</strong>
-        <span className="chip mono">ROOM · 6-CHAR CODE</span>
+        <strong>Room preview</strong>
         <span className="chip chip-green mono">3 IN ROOM</span>
       </div>
 
@@ -196,26 +216,25 @@ function RoomPreview() {
           <div className="mini-panel">
             <p className="mini-title">Participants <span className="chip mono">3</span></p>
             {[
-              ["Arisha", "host", "Host (you)"],
-              ["Rahul", "moderator", "Moderator"],
-              ["Aman", "participant", "Participant"],
-            ].map(([name, role, label]) => (
-              <div className="mini-row" key={name}>
+              ["You", "host"],
+              ["Friend", "moderator"],
+              ["Friend", "participant"],
+            ].map(([name, role], i) => (
+              <div className="mini-row" key={i}>
                 <span className={`avatar av-${role}`}>{name[0]}</span>
                 <span>{name}</span>
-                <span className={`pill pill-${role} mono`}>{label}</span>
+                <span className={`pill pill-${role} mono`}>{role}</span>
               </div>
             ))}
           </div>
 
           <div className="mini-panel">
             <p className="mini-title">Room chat</p>
-            <p className="mini-msg"><strong>Arisha</strong> Ready? Pressing play.</p>
-            <p className="mini-msg"><strong>Rahul</strong> Synced on my side 🔥</p>
+            <p className="mini-msg"><strong>Host</strong> Pressing play.</p>
+            <p className="mini-msg"><strong>Moderator</strong> In sync 🔥</p>
           </div>
         </div>
       </div>
-      <p className="preview-note mono">Illustration of the room layout.</p>
     </div>
   );
 }
@@ -249,6 +268,21 @@ export default function Home() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [connected, setConnected] = useState(socket.connected);
+  const [success, setSuccess] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Page title (index.html has the default; this keeps it right after navigating back)
+  useEffect(() => {
+    document.title = "WatchParty | Watch YouTube together, in sync";
+  }, []);
+
+  // Escape closes the mobile menu
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e) => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   useEffect(() => {
     const on = () => setConnected(true);
@@ -262,6 +296,7 @@ export default function Home() {
   }, []);
 
   function startParty() {
+    setMenuOpen(false);
     setTab("create");
     document.getElementById("start")?.scrollIntoView({ behavior: "smooth", block: "center" });
     setTimeout(() => nameRef.current?.focus(), 450);
@@ -270,9 +305,11 @@ export default function Home() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     const name = username.trim();
     if (!name) return setError("Enter your name first.");
+    if (!/^[A-Za-z0-9]+$/.test(name)) return setError("Name can only contain letters and numbers.");
 
     // A new room needs a video, so the Host can never enter an empty room
     let videoId = null;
@@ -308,6 +345,8 @@ export default function Home() {
         res.state = { ...res.state, videoId, playState: "paused", currentTime: 0 };
       }
 
+      setSuccess(tab === "create" ? "Room created! Taking you in…" : "Joined! Taking you in…");
+      await new Promise((r) => setTimeout(r, 700)); // let the message be seen
       navigate(`/room/${res.roomId}`, { state: res });
     } catch (err) {
       setError(err.message);
@@ -321,20 +360,23 @@ export default function Home() {
       {/* ---- nav ---- */}
       <nav className="lp-nav">
         <div className="wrap">
-          <a className="lp-brand" href="#top">
+          <a className="lp-brand" href="/" aria-label="WatchParty home"
+             onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); setMenuOpen(false); }}>
             <span className="lp-logo"><Icon name="play" size={13} /></span>
             WatchParty
           </a>
-          <div className="lp-links">
-            <a href="#how">How it works</a>
-            <a href="#features">Features</a>
-            <a href="#inside">Inside a Room</a>
-            <a href="#roles">Roles</a>
-            <a href="#faq">FAQ</a>
-            <a href="#tech">Tech Stack</a>
+          <div id="lp-menu" className={`lp-links ${menuOpen ? "open" : ""}`}>
+            {NAV_LINKS.map(([href, label]) => (
+              <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>
+            ))}
           </div>
-          <button type="button" className="btn btn-primary btn-sm" onClick={startParty}>
+          <button type="button" className="btn btn-primary btn-sm nav-cta" onClick={startParty}>
             Start a party
+          </button>
+          <button type="button" className="nav-toggle" aria-label="Toggle menu"
+                  aria-expanded={menuOpen} aria-controls="lp-menu"
+                  onClick={() => setMenuOpen((o) => !o)}>
+            <Icon name={menuOpen ? "x" : "menu"} size={18} />
           </button>
         </div>
       </nav>
@@ -395,7 +437,7 @@ export default function Home() {
             <div className="field">
               <label htmlFor="lp-name">Your name</label>
               <input id="lp-name" ref={nameRef} value={username}
-                     onChange={(e) => setUsername(e.target.value)}
+                     onChange={(e) => setUsername(e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
                      placeholder="e.g. Alex" maxLength={20} />
             </div>
 
@@ -419,7 +461,8 @@ export default function Home() {
                     disabled={busy || !connected || (tab === "create" && !videoUrl.trim())}>
               {busy ? "Please wait…" : tab === "create" ? "Create Room" : "Join Room"}
             </button>
-            {error && <p className="form-error">{error}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
+            {success && <p className="form-success" role="status">{success}</p>}
 
             <p className="start-foot mono">
               <span>No account needed. Just pick a name.</span>
@@ -518,7 +561,7 @@ export default function Home() {
                     <strong>{n.name}</strong>
                     <span className="mono">{n.sub}</span>
                   </div>
-                  {n.edge && <span className="flow-edge mono">{n.edge} →</span>}
+                  {n.edge && <span className="flow-edge mono">{n.edge} <i className="arr" /></span>}
                 </div>
               ))}
             </div>
@@ -564,6 +607,19 @@ export default function Home() {
               <strong>WatchParty</strong>
               <p>Watch YouTube together, in sync, with friends anywhere.</p>
             </div>
+            <nav className="foot-links" aria-label="Footer">
+              {FOOTER_LINKS.map(([href, label]) => (
+                <a key={href} href={href}>{label}</a>
+              ))}
+              <a href="#top">Back to top</a>
+              {GITHUB_URL && (
+                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
+              )}
+              {CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>}
+              {CONTACT_PHONE && (
+                <a href={`tel:${CONTACT_PHONE.replace(/[^\d+]/g, "")}`}>{CONTACT_PHONE}</a>
+              )}
+            </nav>
           </div>
           <div className="tech tech-foot">
             {TECH.map((t) => <span className="chip mono" key={t}>{t}</span>)}

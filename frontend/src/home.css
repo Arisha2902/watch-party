@@ -24,8 +24,12 @@ html { scroll-behavior: smooth; }
   position: relative;
   z-index: 1;
 }
-.lp *, .lp *::before, .lp *::after { box-sizing: border-box; }
-.lp h1, .lp h2, .lp h3, .lp p, .lp ul { margin: 0; padding: 0; }
+/* No sideways scrolling: clip anything that pokes out (clip, unlike hidden, keeps sticky working) */
+.lp { overflow-x: clip; max-width: 100%; }
+.lp img, .lp svg, .lp video { max-width: 100%; }
+.lp *, .lp *::before, .lp *::after { box-sizing: border-box; min-width: 0; }
+/* :where() keeps this reset at the lowest specificity so component rules (.form-error etc.) can set their own spacing */
+:where(.lp) :is(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
 .lp ul { list-style: none; }
 .lp button, .lp input { font-family: inherit; }
 .lp .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
@@ -83,7 +87,7 @@ html { scroll-behavior: smooth; }
 
 /* ---------- hero ---------- */
 .lp-hero { padding: 72px 0 88px; }
-.hero-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: center; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; align-items: center; }
 .eyebrow-chip {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
@@ -135,7 +139,8 @@ html { scroll-behavior: smooth; }
   border-radius: 8px; color: var(--text); font-size: 14px;
 }
 .lp .field input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px #ff6b0022; }
-.form-error { color: #f87171; font-size: 13px; margin-top: 10px; }
+.form-error { color: #f87171; font-size: 13px; margin-top: 10px; background: #f8717114; border: 1px solid #f8717140; padding: 9px 12px; border-radius: 8px; }
+.form-success { color: var(--green); font-size: 13px; margin-top: 10px; background: #34d39914; border: 1px solid #34d39940; padding: 9px 12px; border-radius: 8px; }
 .start-foot {
   display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
   margin-top: 14px; font-size: 10px; color: var(--muted);
@@ -157,7 +162,7 @@ html { scroll-behavior: smooth; }
 }
 
 /* steps */
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .step { padding: 22px; }
 .step-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
 .step-n { font-size: 40px; font-weight: 600; line-height: 1; }
@@ -170,7 +175,7 @@ html { scroll-behavior: smooth; }
 .tone-green .step-tag { color: var(--green); }
 
 /* features */
-.features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .feature { padding: 18px; }
 .feature .icon-box { margin-bottom: 14px; }
 .feature h3 { font-size: 14px; margin-bottom: 6px; }
@@ -181,7 +186,7 @@ html { scroll-behavior: smooth; }
 .preview-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .preview-top .chip:last-child { margin-left: auto; }
 .preview .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
-.preview-body { display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; }
+.preview-body { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 14px; }
 .mock-player {
   position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden;
   display: grid; place-items: center; border: 1px solid var(--line);
@@ -211,7 +216,7 @@ html { scroll-behavior: smooth; }
 .preview-note { font-size: 10px; color: var(--muted); margin-top: 12px; text-align: right; }
 
 /* roles */
-.roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .role-card { padding: 22px; border-top: 2px solid var(--line); }
 .role-card.tone-orange { border-top-color: var(--orange); }
 .role-card.tone-blue { border-top-color: var(--blue); }
@@ -252,6 +257,7 @@ html { scroll-behavior: smooth; }
 .flow-node.tone-blue svg { color: var(--blue); }
 .flow-node.tone-green svg { color: var(--green); }
 .flow-edge { font-size: 10px; color: var(--amber); padding: 0 6px; white-space: nowrap; }
+.flow-edge .arr::before { content: "→"; }
 .hood-note { text-align: center; font-size: 11px; color: var(--green); margin: 18px 0 24px; }
 .hood-note i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 6px; }
 .tech { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -271,21 +277,67 @@ html { scroll-behavior: smooth; }
 .cta .sub { margin-bottom: 22px; }
 .cta-foot { font-size: 10px; color: var(--muted); margin-top: 20px; }
 .lp-footer { border-top: 1px solid var(--line); padding: 40px 0 28px; background: #080b0d; }
+.foot-top { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .foot-top p { color: var(--muted); font-size: 13px; margin-top: 6px; max-width: 420px; }
+.foot-links { display: flex; flex-wrap: wrap; gap: 8px 20px; align-content: flex-start; max-width: 460px; }
+.lp .foot-links a { color: var(--muted); font-size: 13px; text-decoration: none; }
+.lp .foot-links a:hover { color: var(--text); text-decoration: underline; }
 .tech-foot { justify-content: flex-start; margin: 24px 0; }
 .copy { font-size: 10px; color: var(--muted); }
 
+/* 404 page */
+.notfound { display: grid; place-items: center; padding: 20px; }
+.nf-card { max-width: 480px; width: 100%; text-align: center; padding: 44px 28px; background: radial-gradient(circle at 50% 0%, #ff6b0022, transparent 60%), var(--surface); }
+.nf-card h1 { font-size: clamp(26px, 5vw, 34px); margin: 4px 0 10px; letter-spacing: -.015em; }
+.lp .nf-brand { justify-content: center; margin-bottom: 22px; }
+.nf-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+
 /* ---------- responsive ---------- */
+/* mobile menu button: hidden on desktop */
+.lp .nav-toggle {
+  display: none; width: 38px; height: 38px; border-radius: 8px; cursor: pointer;
+  background: var(--surface2); border: 1px solid var(--line); color: var(--text);
+  align-items: center; justify-content: center;
+}
+
 @media (max-width: 960px) {
-  .features { grid-template-columns: repeat(2, 1fr); }
-  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
-  .lp-links { display: none; }
-  .lp-nav .wrap { justify-content: space-between; }
+  .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .lp-nav .wrap { justify-content: space-between; gap: 10px; }
+  .lp .nav-toggle { display: inline-flex; }
+  .lp .nav-cta { margin-left: auto; }
+  /* the links become a dropdown under the bar */
+  .lp-links {
+    display: none; position: absolute; top: 60px; left: 0; right: 0; margin: 0;
+    flex-direction: column; gap: 0; padding: 8px 20px 14px;
+    background: #0a0d10; border-bottom: 1px solid var(--line); box-shadow: 0 18px 40px #000c;
+  }
+  .lp-links.open { display: flex; }
+  .lp .lp-links a { padding: 13px 0; font-size: 15px; border-bottom: 1px solid var(--line); }
+  .lp .lp-links a:last-child { border-bottom: 0; }
 }
 @media (max-width: 700px) {
-  .steps, .roles { grid-template-columns: 1fr; }
-  .preview-body { grid-template-columns: 1fr; }
-  .features { grid-template-columns: 1fr; }
-  .flow-node-wrap { flex-direction: column; }
-  .flow-edge { transform: rotate(90deg); padding: 8px 0; }
+  .steps, .roles { grid-template-columns: minmax(0, 1fr); }
+  .preview-body { grid-template-columns: minmax(0, 1fr); }
+  .features { grid-template-columns: minmax(0, 1fr); }
+  .lp-hero { padding: 40px 0 56px; }
+  .lp-section { padding: 52px 0; }
+  .hood { padding: 28px 16px; }
+  .lp .nav-cta { display: none; }   /* the hero has the same button; saves bar space */
+  .lp .nav-toggle { margin-left: auto; }
+  /* thumb-friendly: 44px tap targets, and 16px inputs so iPhones don't zoom on focus */
+  .lp .btn, .lp .tab, .lp .faq-item button { min-height: 44px; }
+  .lp .field input { font-size: 16px; min-height: 46px; }
+  .hero-actions .btn { flex: 1 1 auto; }
+  .start-card { padding: 18px; }
+  .sec-head { margin-bottom: 28px; }
+  .lp .wrap { padding: 0 16px; }
+  .flow { padding: 16px 10px; }
+  .flow-node { width: 100%; }
+  .lp .foot-links a { padding: 6px 0; }
+  /* diagram: one column, arrows point down */
+  .flow { flex-direction: column; align-items: stretch; gap: 0; }
+  .flow-node-wrap { flex-direction: column; width: 100%; gap: 0; }
+  .flow-edge { padding: 8px 0; text-align: center; }
+  .flow-edge .arr::before { content: "↓"; }
 }
