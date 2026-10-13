@@ -186,7 +186,8 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
     const body = asObject(payload);
 
     const username = parseUsername(body.username);
-    if (!username) return reply({ ok: false, error: USERNAME_ERROR });
+    if (!username) return // handlers.ts: replace the return line in parseUsername
+// return /^[A-Za-z0-9]{1,20}$/.test(name) ? name : null; reply({ ok: false, error: USERNAME_ERROR });
 
     // Check the video BEFORE creating the room, so a bad request leaves nothing behind
     const videoId = parseVideoId(body.videoId);
@@ -209,7 +210,7 @@ export function registerHandlers(io: Server, socket: Socket, rooms: RoomManager)
   });
 
     const username = parseUsername(asObject(payload).username);
-    if (!username) return reply({ ok: false, error: USERNAME_ERROR });
+    if (!username) return reply({ ok: false, error: "Name must be 1-20 letters or numbers." });
 
     const room = rooms.createRoom();
     const me: Participant = {

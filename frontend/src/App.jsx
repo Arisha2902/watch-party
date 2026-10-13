@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Room from "./pages/Room";
 import AmbientBackground from "./components/AmbientBackground";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/room/:code" element={<Room />} />
         <Route path="*" element={<Home />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );

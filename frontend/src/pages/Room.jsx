@@ -15,6 +15,7 @@ export default function Room() {
   );
 
   const connected = useConnected();
+  useEffect(() => { document.title = `Room ${code.toUpperCase()} | WatchParty`; }, [code]);
 
   if (!joined) {
     return (
