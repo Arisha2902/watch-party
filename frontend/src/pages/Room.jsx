@@ -5,6 +5,7 @@ import RoomView from "../components/RoomView";
 import { emitAck, socket } from "../services/socket";
 import { useConnected } from "../hooks/useConnected";
 import ServerStatus from "../components/ServerStatus";
+import { useEffect } from "react";
 
 export default function Room() {
   const { code = "" } = useParams();
