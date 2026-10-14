@@ -2,8 +2,8 @@
 
 Watch YouTube videos together in real time. One person creates a room and becomes the **Host**; friends join with a room code or invite link. When the Host (or a Moderator) plays, pauses, seeks or changes the video, **everyone in the room sees the same thing**, synchronized over WebSockets.
 
-> **Live demo:** `https://YOUR-APP.vercel.app` &nbsp;&larr; **TODO: replace with your real Vercel URL after deploying and testing it**
-> **Backend (WebSocket server):** `https://YOUR-SERVICE.onrender.com` &nbsp;&larr; **TODO: replace with your real Render URL**
+> **Live demo:** `https://watch-party-seven-jade.vercel.app/` &nbsp;&larr; **TODO: replace with your real Vercel URL after deploying and testing it**
+> **Backend (WebSocket server):** `https://watch-party-k0xh.onrender.com/` &nbsp;&larr; **TODO: replace with your real Render URL**
 >
 > The backend runs on Render's free tier, which sleeps after about 15 minutes of inactivity. The first connection after a pause can take 30 to 60 seconds; the app shows a "Connecting to the server..." banner while it wakes up.
 
@@ -189,7 +189,7 @@ Open `http://localhost:5173`, create a room, then open the invite link in a **se
 |---|---|---|---|
 | Backend | `PORT` | `3001` | Port to listen on. Render injects this; do not set it there |
 | Backend | `CLIENT_ORIGIN` | `http://localhost:5173` | Allowed frontend origin(s) for CORS. Exact match, no trailing slash. Several origins can be comma-separated, for example `https://app.vercel.app,http://localhost:5173` |
-| Frontend | `VITE_SERVER_URL` | `http://localhost:3001` | Backend URL the browser connects to. Vite reads it at **build time**, so changing it needs a rebuild or redeploy |
+| Frontend | `https://watch-party-k0xh.onrender.com/` | `http://localhost:3001` | Backend URL the browser connects to. Vite reads it at **build time**, so changing it needs a rebuild or redeploy |
 
 ## Testing
 
@@ -229,7 +229,7 @@ The backend needs a long-lived process for WebSockets, so it runs on **Render**.
 | Build command | `npm install --include=dev && npm run build` |
 | Start command | `npm start` |
 | Health check path | `/health` |
-| Env var `CLIENT_ORIGIN` | your Vercel URL (set after the frontend is deployed) |
+| Env var `CLIENT_ORIGIN` | https://watch-party-seven-jade.vercel.app/ |
 | Env var `NODE_VERSION` | optional; match your local Node major version |
 
 `--include=dev` is needed because TypeScript is a devDependency and Render may set `NODE_ENV=production`.
